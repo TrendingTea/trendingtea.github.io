@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>What the Prompt — macOS Studio Helm</title>
+  <title>What the Prompt — Executive Producer & Studio Helm</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -12,14 +12,15 @@
       theme: {
         extend: {
           colors: {
-            macBg: '#121316',
-            macSidebar: '#1a1c22',
-            macCard: '#21242d',
+            macBg: '#0e1015',
+            macSidebar: '#16181f',
+            macCard: '#1d202a',
             macBorder: 'rgba(255, 255, 255, 0.08)',
             macAccent: '#3b82f6',
             macRed: '#ff5f56',
             macYellow: '#ffbd2e',
-            macGreen: '#27c93f'
+            macGreen: '#27c93f',
+            epGold: '#f59e0b'
           },
           fontFamily: {
             sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'Inter', 'sans-serif'],
@@ -30,27 +31,26 @@
     }
   </script>
   <style>
-    /* macOS Glassmorphism & Custom Scrollbars */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 999px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
 
     .glass-nav {
-      background: rgba(26, 28, 34, 0.75);
+      background: rgba(22, 24, 31, 0.85);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
     }
 
     .glass-card {
-      background: rgba(33, 36, 45, 0.6);
+      background: rgba(29, 32, 42, 0.7);
       backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.07);
     }
 
     @keyframes pulseGlow {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.96); }
+      50% { opacity: 0.4; transform: scale(0.95); }
     }
     .pulse-glow { animation: pulseGlow 1.5s infinite ease-in-out; }
 
@@ -78,7 +78,7 @@
     .scanline-overlay {
       background: linear-gradient(
         rgba(18, 16, 16, 0) 50%, 
-        rgba(0, 0, 0, 0.25) 50%
+        rgba(0, 0, 0, 0.3) 50%
       ), linear-gradient(
         90deg,
         rgba(255, 0, 0, 0.03),
@@ -93,278 +93,407 @@
 <body class="bg-macBg text-zinc-100 font-sans h-screen flex flex-col overflow-hidden select-none">
 
   <!-- macOS Window Titlebar -->
-  <header class="h-11 glass-nav border-b border-macBorder flex items-center justify-between px-4 z-40">
-    <!-- Traffic Lights -->
-    <div class="flex items-center space-x-2 w-48">
-      <div class="w-3 h-3 rounded-full bg-macRed cursor-pointer shadow-sm flex items-center justify-center group" title="Close">
-        <span class="opacity-0 group-hover:opacity-100 text-[8px] text-black font-bold">×</span>
+  <header class="h-12 glass-nav border-b border-macBorder flex items-center justify-between px-4 z-40">
+    <!-- Traffic Lights & App Title -->
+    <div class="flex items-center space-x-3 w-64">
+      <div class="flex items-center space-x-2">
+        <div class="w-3 h-3 rounded-full bg-macRed cursor-pointer shadow-sm flex items-center justify-center group" title="Close">
+          <span class="opacity-0 group-hover:opacity-100 text-[8px] text-black font-bold">×</span>
+        </div>
+        <div class="w-3 h-3 rounded-full bg-macYellow cursor-pointer shadow-sm flex items-center justify-center group" title="Minimize">
+          <span class="opacity-0 group-hover:opacity-100 text-[8px] text-black font-bold">-</span>
+        </div>
+        <div class="w-3 h-3 rounded-full bg-macGreen cursor-pointer shadow-sm flex items-center justify-center group" onclick="toggleFullscreen()" title="Fullscreen">
+          <span class="opacity-0 group-hover:opacity-100 text-[7px] text-black font-bold">+</span>
+        </div>
       </div>
-      <div class="w-3 h-3 rounded-full bg-macYellow cursor-pointer shadow-sm flex items-center justify-center group" title="Minimize">
-        <span class="opacity-0 group-hover:opacity-100 text-[8px] text-black font-bold">-</span>
+      <div class="flex items-center space-x-2">
+        <span class="text-xs font-bold text-white tracking-wide">WHAT THE PROMPT</span>
+        <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">EP HELM</span>
       </div>
-      <div class="w-3 h-3 rounded-full bg-macGreen cursor-pointer shadow-sm flex items-center justify-center group" onclick="toggleFullscreen()" title="Fullscreen">
-        <span class="opacity-0 group-hover:opacity-100 text-[7px] text-black font-bold">+</span>
-      </div>
-      <span class="text-xs font-medium text-zinc-400 ml-2">What the Prompt Studio</span>
+    </div>
+
+    <!-- Mode Selector Deck -->
+    <div class="flex items-center bg-zinc-900/90 p-1 rounded-lg border border-zinc-800 space-x-1">
+      <button onclick="switchMainView('host')" id="btn-mode-host" class="px-3 py-1 rounded-md text-xs font-bold bg-blue-600 text-white shadow transition flex items-center space-x-1">
+        <span>🎙️</span>
+        <span>Host Runner</span>
+      </button>
+      <button onclick="switchMainView('ep')" id="btn-mode-ep" class="px-3 py-1 rounded-md text-xs font-bold text-zinc-400 hover:text-white transition flex items-center space-x-1">
+        <span>🎬</span>
+        <span>Executive Producer</span>
+      </button>
+      <button onclick="switchMainView('repurpose')" id="btn-mode-repurpose" class="px-3 py-1 rounded-md text-xs font-bold text-zinc-400 hover:text-white transition flex items-center space-x-1">
+        <span>🚀</span>
+        <span>1:10 Engine</span>
+      </button>
     </div>
 
     <!-- Center Show Status & Timers -->
-    <div class="flex items-center space-x-6">
-      <!-- On Air Pill -->
+    <div class="flex items-center space-x-4">
       <div id="live-indicator" class="flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-xs font-semibold">
         <span id="live-dot" class="w-2 h-2 rounded-full bg-zinc-500"></span>
         <span id="live-text" class="tracking-wider">STANDBY</span>
       </div>
 
-      <!-- Segment Timer -->
-      <div class="flex items-center space-x-1.5 font-mono text-sm">
-        <span class="text-zinc-500 text-xs uppercase">SEG:</span>
-        <span id="segment-timer-display" class="font-bold text-amber-400">02:30</span>
+      <div class="flex items-center space-x-1.5 font-mono text-xs">
+        <span class="text-zinc-500 uppercase">SEG:</span>
+        <span id="segment-timer-display" class="font-bold text-amber-400 text-sm">02:30</span>
       </div>
 
-      <!-- Show Elapsed Timer -->
-      <div class="flex items-center space-x-1.5 font-mono text-sm">
-        <span class="text-zinc-500 text-xs uppercase">TOTAL:</span>
-        <span id="total-timer-display" class="font-bold text-zinc-200">00:00:00</span>
+      <div class="flex items-center space-x-1.5 font-mono text-xs">
+        <span class="text-zinc-500 uppercase">TOTAL:</span>
+        <span id="total-timer-display" class="font-bold text-zinc-200 text-sm">00:00:00</span>
       </div>
     </div>
 
-    <!-- Audio VU Meter & Commercial Quick Button -->
-    <div class="flex items-center space-x-4 w-64 justify-end">
-      <!-- Audio Meter Canvas -->
-      <canvas id="vu-meter" width="80" height="14" class="rounded bg-zinc-900 border border-zinc-700/50"></canvas>
+    <!-- Right Controls: Audio Visualizer & Teaser Trigger -->
+    <div class="flex items-center space-x-3 w-64 justify-end">
+      <canvas id="vu-meter" width="70" height="14" class="rounded bg-zinc-900 border border-zinc-700/50"></canvas>
       
-      <!-- Angst Commercial Launcher Button -->
-      <button onclick="window.commercialAnimator.start()" class="flex items-center space-x-1.5 px-3 py-1 rounded-md bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white text-xs font-bold shadow-md transition transform active:scale-95">
-        <span>🎬</span>
+      <!-- Angst Commercial Launcher -->
+      <button onclick="window.commercialAnimator.start()" class="flex items-center space-x-1.5 px-3 py-1 rounded-md bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white text-xs font-black shadow-lg transition transform active:scale-95">
+        <span>🔥</span>
         <span>TEASER</span>
       </button>
     </div>
   </header>
 
-  <!-- Main 3-Column Studio Layout -->
+  <!-- ================= MASTER BODY WORKSPACE ================= -->
   <div class="flex-1 flex overflow-hidden">
 
-    <!-- 1. LEFT SIDEBAR: Show Flow & Segments Helm -->
-    <aside class="w-80 bg-macSidebar border-r border-macBorder flex flex-col justify-between">
+    <!-- ================= VIEW 1: HOST RUNNER (TELEPROMPTER & BEATS) ================= -->
+    <div id="view-host" class="flex-1 flex overflow-hidden">
       
-      <!-- Show Header Info -->
-      <div class="p-4 border-b border-macBorder">
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-[10px] uppercase font-bold tracking-wider text-blue-400">EPISODE #12 • LIVE</span>
-          <span class="text-[10px] text-zinc-500">30 MIN TARGET</span>
-        </div>
-        <h2 id="show-title" class="text-sm font-bold text-white leading-snug">The Death of the Search Bar & The 10,000-Token Monologue</h2>
-      </div>
-
-      <!-- Segments List -->
-      <div class="flex-1 overflow-y-auto p-3 space-y-2" id="segment-list-container">
-        <!-- Injected via JavaScript -->
-      </div>
-
-      <!-- Bottom Helm Tools -->
-      <div class="p-3 border-t border-macBorder bg-zinc-900/50 space-y-2">
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="fireCurrentSegmentStinger()" class="flex items-center justify-center space-x-1 py-1.5 px-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-amber-300 border border-amber-500/20 transition">
-            <span>⚡</span>
-            <span>Fire Stinger</span>
-          </button>
-          <button onclick="copyFullRundown()" class="flex items-center justify-center space-x-1 py-1.5 px-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 border border-zinc-700 transition">
-            <span>📋</span>
-            <span>Copy Flow</span>
-          </button>
-        </div>
-        <div class="text-[10px] text-zinc-500 text-center font-mono">
-          [SPACE] Next Beat • [1-6] Jump • [T] Teaser
-        </div>
-      </div>
-    </aside>
-
-    <!-- 2. CENTER STAGE: Teleprompter & Live Prompt Studio -->
-    <main class="flex-1 flex flex-col bg-macBg overflow-hidden">
-      
-      <!-- Segment Top Toolbar -->
-      <div class="h-12 border-b border-macBorder flex items-center justify-between px-6 bg-zinc-900/40">
-        <div class="flex items-center space-x-3">
-          <span id="active-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">HOOK</span>
-          <h1 id="active-segment-name" class="text-base font-bold text-white">Cold Open & Teaser Hook</h1>
-        </div>
-
-        <!-- Teleprompter Controls -->
-        <div class="flex items-center space-x-2 text-xs">
-          <span class="text-zinc-500">Text Size:</span>
-          <button onclick="adjustFontSize(-2)" class="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center font-bold">-</button>
-          <button onclick="adjustFontSize(2)" class="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center font-bold">+</button>
-          <div class="h-4 w-px bg-zinc-700 mx-1"></div>
-          <button onclick="togglePromptRunnerView()" id="toggle-runner-btn" class="px-2.5 py-1 rounded bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 font-medium">
-            🧠 Prompt Studio
-          </button>
-        </div>
-      </div>
-
-      <!-- Main Stage Content Area -->
-      <div class="flex-1 flex overflow-hidden">
-
-        <!-- Teleprompter Script View -->
-        <div id="teleprompter-container" class="flex-1 overflow-y-auto p-8 space-y-6">
-          <div id="teleprompter-text" class="text-lg leading-relaxed text-zinc-200 font-sans whitespace-pre-line select-text">
-            <!-- Teleprompter content injected -->
+      <!-- 1. LEFT SIDEBAR: Segments List -->
+      <aside class="w-80 bg-macSidebar border-r border-macBorder flex flex-col justify-between">
+        <div class="p-4 border-b border-macBorder">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] uppercase font-bold tracking-wider text-blue-400">EPISODE #12 • LIVE RUNDOWN</span>
+            <span class="text-[10px] text-zinc-500">30 MIN</span>
           </div>
-
-          <!-- Talking Points Checklist -->
-          <div class="mt-8 pt-6 border-t border-macBorder">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">On-Air Beat Checklist</h3>
-            <div id="talking-points-container" class="space-y-2">
-              <!-- Injected -->
-            </div>
-          </div>
+          <h2 id="show-title" class="text-sm font-bold text-white leading-snug truncate">The Death of the Search Bar & The 10,000-Token Monologue</h2>
         </div>
 
-        <!-- Interactive Prompt Runner Pane (Toggleable) -->
-        <div id="prompt-runner-pane" class="w-96 border-l border-macBorder bg-zinc-950/60 p-4 flex flex-col justify-between hidden">
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-blue-400 uppercase tracking-wider" id="runner-title">Prompt Runner</span>
-              <span class="text-[10px] text-zinc-500">LIVE CO-PILOT</span>
-            </div>
-            <p class="text-xs text-zinc-400" id="runner-desc">Generate spicy takes and tailored prompts for this segment.</p>
-            
-            <textarea id="runner-prompt-input" rows="6" class="w-full text-xs font-mono p-3 rounded-md bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-blue-500 resize-none select-text"></textarea>
+        <div class="flex-1 overflow-y-auto p-3 space-y-2" id="segment-list-container">
+          <!-- Injected via JavaScript -->
+        </div>
 
-            <button onclick="executeSegmentPrompt()" id="runner-exec-btn" class="w-full py-2 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md transition flex items-center justify-center space-x-1.5">
+        <div class="p-3 border-t border-macBorder bg-zinc-900/50 space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="fireCurrentSegmentStinger()" class="flex items-center justify-center space-x-1 py-1.5 px-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-amber-300 border border-amber-500/20 transition">
               <span>⚡</span>
-              <span>Execute Live Co-Host Prompt</span>
+              <span>Fire Stinger</span>
+            </button>
+            <button onclick="copyFullRundown()" class="flex items-center justify-center space-x-1 py-1.5 px-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 border border-zinc-700 transition">
+              <span>📋</span>
+              <span>Copy Flow</span>
             </button>
           </div>
+          <div class="text-[10px] text-zinc-500 text-center font-mono">
+            [SPACE] Next Beat • [1-6] Jump • [T] Teaser
+          </div>
+        </div>
+      </aside>
 
-          <!-- Model Output Stream -->
-          <div class="flex-1 mt-4 flex flex-col">
-            <span class="text-[10px] font-bold uppercase text-zinc-500 mb-1">Co-Host Generated Response:</span>
-            <div id="runner-output" class="flex-1 p-3 rounded-md bg-zinc-900/80 border border-zinc-800 text-xs font-mono text-emerald-300 overflow-y-auto whitespace-pre-wrap select-text">
-              [Ready to generate segment response]
+      <!-- 2. CENTER: Teleprompter & Prompt Runner -->
+      <main class="flex-1 flex flex-col bg-macBg overflow-hidden">
+        
+        <div class="h-12 border-b border-macBorder flex items-center justify-between px-6 bg-zinc-900/40">
+          <div class="flex items-center space-x-3">
+            <span id="active-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">HOOK</span>
+            <h1 id="active-segment-name" class="text-base font-bold text-white">Cold Open & Teaser Hook</h1>
+          </div>
+
+          <div class="flex items-center space-x-2 text-xs">
+            <span class="text-zinc-500">Font:</span>
+            <button onclick="adjustFontSize(-2)" class="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center font-bold">-</button>
+            <button onclick="adjustFontSize(2)" class="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center font-bold">+</button>
+            <div class="h-4 w-px bg-zinc-700 mx-1"></div>
+            <button onclick="togglePromptRunnerView()" id="toggle-runner-btn" class="px-2.5 py-1 rounded bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 font-medium">
+              🧠 Live Co-Host Prompt
+            </button>
+          </div>
+        </div>
+
+        <div class="flex-1 flex overflow-hidden">
+          <div id="teleprompter-container" class="flex-1 overflow-y-auto p-8 space-y-6">
+            <div id="teleprompter-text" class="text-lg leading-relaxed text-zinc-200 font-sans whitespace-pre-line select-text"></div>
+
+            <div class="mt-8 pt-6 border-t border-macBorder">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">On-Air Beat Checklist</h3>
+              <div id="talking-points-container" class="space-y-2"></div>
+            </div>
+          </div>
+
+          <div id="prompt-runner-pane" class="w-96 border-l border-macBorder bg-zinc-950/60 p-4 flex flex-col justify-between hidden">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-blue-400 uppercase tracking-wider" id="runner-title">Prompt Runner</span>
+                <span class="text-[10px] text-zinc-500">AI CO-PILOT</span>
+              </div>
+              <p class="text-xs text-zinc-400" id="runner-desc">Generate spicy takes and tailored prompts for this segment.</p>
+              
+              <textarea id="runner-prompt-input" rows="6" class="w-full text-xs font-mono p-3 rounded-md bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-blue-500 resize-none select-text"></textarea>
+
+              <button onclick="executeSegmentPrompt()" id="runner-exec-btn" class="w-full py-2 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md transition flex items-center justify-center space-x-1.5">
+                <span>⚡</span>
+                <span>Generate Co-Host Take</span>
+              </button>
+            </div>
+
+            <div class="flex-1 mt-4 flex flex-col">
+              <span class="text-[10px] font-bold uppercase text-zinc-500 mb-1">Generated Response:</span>
+              <div id="runner-output" class="flex-1 p-3 rounded-md bg-zinc-900/80 border border-zinc-800 text-xs font-mono text-emerald-300 overflow-y-auto whitespace-pre-wrap select-text">
+                [Ready to generate segment response]
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Bottom Broadcast Deck Transport -->
-      <div class="h-16 border-t border-macBorder glass-nav px-6 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <button onclick="previousSegment()" class="px-3 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition">
-            ◀ Previous
-          </button>
-          <button onclick="nextSegment()" class="px-4 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold transition flex items-center space-x-1">
-            <span>Next Beat</span>
-            <span>▶</span>
-          </button>
-        </div>
-
-        <!-- Master Broadcast Play/Pause -->
-        <button onclick="toggleBroadcast()" id="broadcast-toggle-btn" class="px-8 py-2.5 rounded-full bg-red-600 hover:bg-red-500 text-white text-xs font-extrabold tracking-wider uppercase shadow-[0_0_20px_rgba(220,38,38,0.4)] transition transform active:scale-95 flex items-center space-x-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
-          <span id="broadcast-btn-label">START BROADCAST</span>
-        </button>
-
-        <div class="flex items-center space-x-2">
-          <button onclick="window.studioAudio.playBassDrop()" class="px-3 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-amber-400 text-xs font-mono">
-            808 SUB
-          </button>
-          <button onclick="window.studioAudio.playAirhorn()" class="px-3 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-rose-400 text-xs font-mono">
-            AIRHORN
-          </button>
-        </div>
-      </div>
-    </main>
-
-    <!-- 3. RIGHT INSPECTOR: Soundboard & Multi-Channel Repurposing Engine -->
-    <aside class="w-84 bg-macSidebar border-l border-macBorder flex flex-col">
-      
-      <!-- Tab Header -->
-      <div class="flex border-b border-macBorder">
-        <button onclick="switchInspectorTab('soundboard')" id="tab-soundboard" class="flex-1 py-3 text-xs font-bold text-blue-400 border-b-2 border-blue-500">
-          🔊 Soundboard
-        </button>
-        <button onclick="switchInspectorTab('repurpose')" id="tab-repurpose" class="flex-1 py-3 text-xs font-bold text-zinc-400 hover:text-zinc-200">
-          🚀 Repurpose
-        </button>
-      </div>
-
-      <!-- Tab 1: Soundboard Grid -->
-      <div id="inspector-soundboard" class="flex-1 overflow-y-auto p-4 space-y-4">
-        <div>
-          <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Synthesized Stingers</span>
-          <div class="grid grid-cols-2 gap-2 mt-2">
-            <button onclick="window.studioAudio.playBassDrop()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-amber-500">
-              <div class="text-xs font-bold text-amber-400">808 Sub Drop</div>
-              <div class="text-[10px] text-zinc-500">Deep cinematic bass</div>
+        <div class="h-16 border-t border-macBorder glass-nav px-6 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <button onclick="previousSegment()" class="px-3 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition">
+              ◀ Previous
             </button>
-            <button onclick="window.studioAudio.playGlitchRiser()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-cyan-500">
-              <div class="text-xs font-bold text-cyan-400">Glitch Riser</div>
-              <div class="text-[10px] text-zinc-500">Noise build & sweep</div>
-            </button>
-            <button onclick="window.studioAudio.playAngstStrobe()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-rose-500">
-              <div class="text-xs font-bold text-rose-400">Angst Strobe</div>
-              <div class="text-[10px] text-zinc-500">Aggressive saw hit</div>
-            </button>
-            <button onclick="window.studioAudio.playMicDrop()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-purple-500">
-              <div class="text-xs font-bold text-purple-400">Mic Drop</div>
-              <div class="text-[10px] text-zinc-500">Heavy impact slam</div>
-            </button>
-            <button onclick="window.studioAudio.playAirhorn()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-yellow-500">
-              <div class="text-xs font-bold text-yellow-400">Airhorn Blast</div>
-              <div class="text-[10px] text-zinc-500">Triple hype horn</div>
-            </button>
-            <button onclick="window.studioAudio.playGavel()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-emerald-500">
-              <div class="text-xs font-bold text-emerald-400">Gavel Slam</div>
-              <div class="text-[10px] text-zinc-500">Double verdict hit</div>
-            </button>
-            <button onclick="window.studioAudio.playTapeStop()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-red-500 col-span-2">
-              <div class="text-xs font-bold text-red-400">Tape Stop / Vinyl Static</div>
-              <div class="text-[10px] text-zinc-500">Sudden halt effect</div>
+            <button onclick="nextSegment()" class="px-4 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold transition flex items-center space-x-1">
+              <span>Next Beat</span>
+              <span>▶</span>
             </button>
           </div>
+
+          <button onclick="toggleBroadcast()" id="broadcast-toggle-btn" class="px-8 py-2.5 rounded-full bg-red-600 hover:bg-red-500 text-white text-xs font-extrabold tracking-wider uppercase shadow-[0_0_20px_rgba(220,38,38,0.4)] transition transform active:scale-95 flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
+            <span id="broadcast-btn-label">START BROADCAST</span>
+          </button>
+
+          <div class="flex items-center space-x-2">
+            <button onclick="window.studioAudio.playBassDrop()" class="px-3 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-amber-400 text-xs font-mono font-bold">
+              808 SUB
+            </button>
+            <button onclick="window.studioAudio.playAirhorn()" class="px-3 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-rose-400 text-xs font-mono font-bold">
+              AIRHORN
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <!-- 3. RIGHT: Soundboard Sidebar -->
+      <aside class="w-80 bg-macSidebar border-l border-macBorder flex flex-col p-4 overflow-y-auto space-y-4">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Synthesized Soundboard</span>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="window.studioAudio.playBassDrop()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition border-l-2 border-l-amber-500">
+            <div class="text-xs font-bold text-amber-400">808 Sub Drop</div>
+            <div class="text-[10px] text-zinc-500">Deep bass punch</div>
+          </button>
+          <button onclick="window.studioAudio.playGlitchRiser()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition border-l-2 border-l-cyan-500">
+            <div class="text-xs font-bold text-cyan-400">Glitch Riser</div>
+            <div class="text-[10px] text-zinc-500">Noise build</div>
+          </button>
+          <button onclick="window.studioAudio.playAngstStrobe()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition border-l-2 border-l-rose-500">
+            <div class="text-xs font-bold text-rose-400">Angst Strobe</div>
+            <div class="text-[10px] text-zinc-500">Sawtooth hit</div>
+          </button>
+          <button onclick="window.studioAudio.playMicDrop()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition border-l-2 border-l-purple-500">
+            <div class="text-xs font-bold text-purple-400">Mic Drop</div>
+            <div class="text-[10px] text-zinc-500">Impact slam</div>
+          </button>
+          <button onclick="window.studioAudio.playAirhorn()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition border-l-2 border-l-yellow-500">
+            <div class="text-xs font-bold text-yellow-400">Airhorn Blast</div>
+            <div class="text-[10px] text-zinc-500">Triple hype</div>
+          </button>
+          <button onclick="window.studioAudio.playGavel()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition border-l-2 border-l-emerald-500">
+            <div class="text-xs font-bold text-emerald-400">Gavel Slam</div>
+            <div class="text-[10px] text-zinc-500">Double verdict</div>
+          </button>
+          <button onclick="window.studioAudio.playTapeStop()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition border-l-2 border-l-red-500 col-span-2">
+            <div class="text-xs font-bold text-red-400">Tape Stop / Static</div>
+            <div class="text-[10px] text-zinc-500">Sudden halt</div>
+          </button>
         </div>
 
         <div class="pt-4 border-t border-macBorder">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Episode Copyright Lock</span>
-          <div class="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-400 mt-2 font-mono">
-            © 2026 What the Prompt.<br>All rights reserved. ID3v2 tagged.
+          <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Broadcast ID3 Notice</span>
+          <div class="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-400 mt-1 font-mono">
+            © 2026 What the Prompt.<br>All rights reserved.
           </div>
         </div>
-      </div>
+      </aside>
 
-      <!-- Tab 2: Repurposing Engine -->
-      <div id="inspector-repurpose" class="flex-1 overflow-y-auto p-4 space-y-3 hidden">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">1-Click Content Engine</span>
-        
-        <!-- Repurpose Format Selector -->
-        <div class="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-md text-[10px] font-bold">
-          <button onclick="setRepurposeFormat('tiktok')" id="btn-fmt-tiktok" class="py-1 rounded bg-blue-600 text-white">3x TikToks</button>
-          <button onclick="setRepurposeFormat('thread')" id="btn-fmt-thread" class="py-1 rounded text-zinc-400 hover:text-white">X Thread</button>
-          <button onclick="setRepurposeFormat('newsletter')" id="btn-fmt-newsletter" class="py-1 rounded text-zinc-400 hover:text-white">Substack</button>
+    </div>
+
+    <!-- ================= VIEW 2: EXECUTIVE PRODUCER HELM ================= -->
+    <div id="view-ep" class="flex-1 overflow-y-auto p-8 space-y-8 hidden">
+      
+      <!-- EP Top Header -->
+      <div class="flex items-center justify-between border-b border-macBorder pb-6">
+        <div>
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-xs font-bold text-amber-400 mb-2">
+            <span>🎬</span>
+            <span>EXECUTIVE PRODUCER COMMAND CONSOLE</span>
+          </div>
+          <h1 class="text-3xl font-extrabold text-white tracking-tight">Show Strategy, Retention & Production Flywheel</h1>
+          <p class="text-sm text-zinc-400 mt-1">Scale "What the Prompt" from a studio session into a top-1% tech media ecosystem.</p>
         </div>
 
-        <textarea id="repurpose-output-box" rows="12" class="w-full text-xs font-mono p-3 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 resize-none select-text"></textarea>
-
-        <button onclick="copyRepurposeContent()" class="w-full py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition flex items-center justify-center space-x-1">
+        <button onclick="exportEPSprintPlan()" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs shadow-lg transition flex items-center space-x-1.5">
           <span>📋</span>
-          <span id="copy-btn-text">Copy to Clipboard</span>
+          <span>Export WDIHDI Sprint Plan</span>
         </button>
       </div>
 
-    </aside>
+      <!-- EP Grid: 4 Strategic Command Modules -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Module 1: Cold Open Hook Score Analyzer -->
+        <div class="glass-card p-6 rounded-2xl space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-xl">🎯</span>
+              <h3 class="text-base font-bold text-white">Cold Open Hook Analyzer</h3>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold">15-SECOND RULE</span>
+          </div>
+          <p class="text-xs text-zinc-400">Paste your opening 15-second cold open hook. The engine will score your curiosity gap, urgency, and retention probability.</p>
+
+          <textarea id="ep-hook-input" rows="3" class="w-full text-xs font-mono p-3 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-amber-500 resize-none select-text" placeholder="e.g. Did we really spend 2 years learning prompt engineering just for reasoning models to spend 45 seconds talking to themselves in a corner?"></textarea>
+
+          <button onclick="analyzeHookScore()" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black font-black text-xs transition shadow-md">
+            Evaluate Hook Retention & Conflict Score
+          </button>
+
+          <div id="ep-hook-result" class="p-4 rounded-xl bg-zinc-950/80 border border-zinc-800 text-xs font-mono space-y-2 hidden">
+            <!-- Results populated via JS -->
+          </div>
+        </div>
+
+        <!-- Module 2: VIP Guest Pack & Briefing Generator -->
+        <div class="glass-card p-6 rounded-2xl space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-xl">🤝</span>
+              <h3 class="text-base font-bold text-white">VIP Guest Promo Pack Engine</h3>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold">COLLAB FLYWHEEL</span>
+          </div>
+          <p class="text-xs text-zinc-400">Generate an irresistible 1-click guest briefing doc and pre-written social promotion kit for prospective tech guests.</p>
+
+          <div class="grid grid-cols-2 gap-3">
+            <input id="ep-guest-name" type="text" placeholder="Guest Name (e.g. Sarah Connor)" class="text-xs font-mono p-2.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-purple-500">
+            <input id="ep-guest-topic" type="text" placeholder="Expertise (e.g. Autonomous Agents)" class="text-xs font-mono p-2.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-purple-500">
+          </div>
+
+          <button onclick="generateGuestPack()" class="w-full py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition shadow-md">
+            Generate VIP Briefing & Promo Pack
+          </button>
+
+          <div id="ep-guest-result" class="p-4 rounded-xl bg-zinc-950/80 border border-zinc-800 text-xs font-mono space-y-2 hidden">
+            <!-- Results populated via JS -->
+          </div>
+        </div>
+
+        <!-- Module 3: WDIHDI Weekly Sprint Kanban -->
+        <div class="glass-card p-6 rounded-2xl space-y-4 lg:col-span-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-xl">📅</span>
+              <h3 class="text-base font-bold text-white">The WDIHDI 7-Day Production Pipeline</h3>
+            </div>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">WEEKLY SPRINT</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 pt-2">
+            
+            <!-- Mon -->
+            <div class="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2">
+              <div class="text-xs font-bold text-blue-400">MON • Research</div>
+              <div class="text-[11px] text-zinc-400 space-y-1.5">
+                <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="rounded bg-zinc-800 text-blue-500"><span>Lock 3 topics</span></label>
+                <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="rounded bg-zinc-800 text-blue-500"><span>Write 15s hook</span></label>
+              </div>
+            </div>
+
+            <!-- Tue -->
+            <div class="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2">
+              <div class="text-xs font-bold text-red-400">TUE • Record Live</div>
+              <div class="text-[11px] text-zinc-400 space-y-1.5">
+                <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="rounded bg-zinc-800 text-red-500"><span>Launch studio helm</span></label>
+                <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="rounded bg-zinc-800 text-red-500"><span>Deliver 3 segments</span></label>
+              </div>
+            </div>
+
+            <!-- Wed -->
+            <div class="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2">
+              <div class="text-xs font-bold text-amber-400">WED • Ruthless Edit</div>
+              <div class="text-[11px] text-zinc-400 space-y-1.5">
+                <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="rounded bg-zinc-800 text-amber-500"><span>Cut 30s lulls</span></label>
+                <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="rounded bg-zinc-800 text-amber-500"><span>Master to -16 LUFS</span></label>
+              </div>
+            </div>
+
+            <!-- Thu -->
+            <div class="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2">
+              <div class="text-xs font-bold text-purple-400">THU • Repurpose</div>
+              <div class="text-[11px] text-zinc-400 space-y-1.5">
+                <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="rounded bg-zinc-800 text-purple-500"><span>Chop 3x TikToks</span></label>
+                <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="rounded bg-zinc-800 text-purple-500"><span>Draft Substack</span></label>
+              </div>
+            </div>
+
+            <!-- Fri -->
+            <div class="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2">
+              <div class="text-xs font-bold text-emerald-400">FRI • Launch Day</div>
+              <div class="text-[11px] text-zinc-400 space-y-1.5">
+                <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="rounded bg-zinc-800 text-emerald-500"><span>Push Spotify/Apple</span></label>
+                <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="rounded bg-zinc-800 text-emerald-500"><span>Post Reel #1</span></label>
+              </div>
+            </div>
+
+            <!-- Sat/Sun -->
+            <div class="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2">
+              <div class="text-xs font-bold text-cyan-400">WEEKEND • Pulse</div>
+              <div class="text-[11px] text-zinc-400 space-y-1.5">
+                <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="rounded bg-zinc-800 text-cyan-500"><span>X Viral Thread</span></label>
+                <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" class="rounded bg-zinc-800 text-cyan-500"><span>Post Reel #2 & #3</span></label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ================= VIEW 3: 1-TO-10 REPURPOSING MACHINE ================= -->
+    <div id="view-repurpose" class="flex-1 overflow-y-auto p-8 space-y-6 hidden">
+      <div class="flex items-center justify-between border-b border-macBorder pb-4">
+        <div>
+          <h1 class="text-2xl font-bold text-white">The 1-to-10 Multi-Channel Repurposing Engine</h1>
+          <p class="text-xs text-zinc-400 mt-1">Transform 1 master podcast episode into 10 high-retention social assets.</p>
+        </div>
+        <button onclick="copyRepurposeContent()" class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow transition flex items-center space-x-1">
+          <span>📋</span>
+          <span id="repurpose-copy-label">Copy All Assets</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-4 gap-2 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs font-bold">
+        <button onclick="setRepurposeTab('tiktoks')" id="rep-tab-tiktoks" class="py-2 rounded bg-blue-600 text-white">3x TikTok / Reels</button>
+        <button onclick="setRepurposeTab('thread')" id="rep-tab-thread" class="py-2 rounded text-zinc-400 hover:text-white">X / LinkedIn Thread</button>
+        <button onclick="setRepurposeTab('newsletter')" id="rep-tab-newsletter" class="py-2 rounded text-zinc-400 hover:text-white">Substack Article</button>
+        <button onclick="setRepurposeTab('youtube')" id="rep-tab-youtube" class="py-2 rounded text-zinc-400 hover:text-white">YouTube SEO & Chapters</button>
+      </div>
+
+      <textarea id="repurpose-main-box" rows="18" class="w-full text-xs font-mono p-4 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-200 resize-none select-text focus:outline-none focus:border-blue-500"></textarea>
+    </div>
 
   </div>
 
-  <!-- FULL-SCREEN KINETIC COMMERCIAL & TEASER MODAL -->
+  <!-- ================= FULL-SCREEN KINETIC COMMERCIAL MODAL ================= -->
   <div id="commercial-modal" class="fixed inset-0 z-50 bg-black hidden items-center justify-center overflow-hidden">
-    <!-- CRT Scanline & Color Glitch Overlay -->
     <div class="absolute inset-0 scanline-overlay z-10"></div>
-    
-    <!-- Flash Overlay -->
     <div id="commercial-flash" class="absolute inset-0 bg-white opacity-0 transition-opacity duration-100 z-20 pointer-events-none"></div>
 
-    <!-- Top Controls -->
     <div class="absolute top-6 right-6 z-30 flex items-center space-x-3">
       <button onclick="toggleCommercialVoice()" id="voice-toggle-btn" class="px-3 py-1.5 rounded-full bg-zinc-800/80 border border-zinc-700 text-xs font-bold text-cyan-400 backdrop-blur">
         🗣️ Voice: ON
@@ -377,7 +506,6 @@
       </button>
     </div>
 
-    <!-- Center Stage Container -->
     <div id="commercial-wrapper" class="relative z-20 text-center px-6 max-w-5xl flex flex-col items-center justify-center space-y-6">
       <div id="commercial-subhead" class="text-xs md:text-sm font-mono tracking-[0.35em] text-zinc-400 uppercase">
         STUDIO TRANSMISSION
@@ -387,7 +515,6 @@
       </div>
     </div>
 
-    <!-- Bottom Progress Bar -->
     <div class="absolute bottom-0 left-0 right-0 h-1.5 bg-zinc-900 z-30">
       <div id="commercial-progress" class="h-full bg-gradient-to-r from-red-600 via-rose-500 to-cyan-400 w-0 transition-all duration-300"></div>
     </div>
@@ -398,13 +525,12 @@
     Notification
   </div>
 
-  <!-- Application Scripts -->
+  <!-- Scripts -->
   <script src="audioEngine.js"></script>
   <script src="showData.js"></script>
   <script src="commercialAnimator.js"></script>
-  
+
   <script>
-    // State Management
     let currentSegmentIndex = 0;
     let isBroadcasting = false;
     let totalSecondsElapsed = 0;
@@ -413,17 +539,39 @@
     let fontSize = 18;
     let activeEpisode = window.SHOW_DATA.DEFAULT_EPISODE;
 
-    // Initialize on DOM ready
     window.addEventListener('DOMContentLoaded', () => {
       renderShowData();
       loadSegment(0);
       setupKeyboardShortcuts();
       initVuMeter();
+      setRepurposeTab('tiktoks');
     });
+
+    function switchMainView(mode) {
+      document.getElementById('view-host').classList.add('hidden');
+      document.getElementById('view-ep').classList.add('hidden');
+      document.getElementById('view-repurpose').classList.add('hidden');
+
+      const bHost = document.getElementById('btn-mode-host');
+      const bEP = document.getElementById('btn-mode-ep');
+      const bRep = document.getElementById('btn-mode-repurpose');
+
+      [bHost, bEP, bRep].forEach(b => b.className = 'px-3 py-1 rounded-md text-xs font-bold text-zinc-400 hover:text-white transition flex items-center space-x-1');
+
+      if (mode === 'host') {
+        document.getElementById('view-host').classList.remove('hidden');
+        bHost.className = 'px-3 py-1 rounded-md text-xs font-bold bg-blue-600 text-white shadow transition flex items-center space-x-1';
+      } else if (mode === 'ep') {
+        document.getElementById('view-ep').classList.remove('hidden');
+        bEP.className = 'px-3 py-1 rounded-md text-xs font-bold bg-amber-500 text-black font-black shadow transition flex items-center space-x-1';
+      } else if (mode === 'repurpose') {
+        document.getElementById('view-repurpose').classList.remove('hidden');
+        bRep.className = 'px-3 py-1 rounded-md text-xs font-bold bg-purple-600 text-white shadow transition flex items-center space-x-1';
+      }
+    }
 
     function renderShowData() {
       document.getElementById('show-title').innerText = activeEpisode.title;
-      
       const container = document.getElementById('segment-list-container');
       container.innerHTML = '';
 
@@ -448,20 +596,14 @@
         `;
         container.appendChild(item);
       });
-
-      setRepurposeFormat('tiktok');
     }
 
     function loadSegment(index) {
       if (index < 0 || index >= activeEpisode.segments.length) return;
-      
-      // Update UI selection
       document.querySelectorAll('#segment-list-container > div').forEach((el, i) => {
-        if (i === index) {
-          el.className = 'p-3 rounded-lg cursor-pointer transition flex items-center justify-between border bg-zinc-800/90 border-blue-500/50 shadow-md';
-        } else {
-          el.className = 'p-3 rounded-lg cursor-pointer transition flex items-center justify-between border glass-card hover:bg-zinc-800/50 border-transparent';
-        }
+        el.className = (i === index) 
+          ? 'p-3 rounded-lg cursor-pointer transition flex items-center justify-between border bg-zinc-800/90 border-blue-500/50 shadow-md'
+          : 'p-3 rounded-lg cursor-pointer transition flex items-center justify-between border glass-card hover:bg-zinc-800/50 border-transparent';
       });
 
       currentSegmentIndex = index;
@@ -473,25 +615,20 @@
       document.getElementById('active-badge').innerText = seg.badge;
       document.getElementById('teleprompter-text').innerText = seg.teleprompter;
 
-      // Talking points
       const tpContainer = document.getElementById('talking-points-container');
       tpContainer.innerHTML = '';
-      seg.talkingPoints.forEach((tp, tpIdx) => {
+      seg.talkingPoints.forEach((tp) => {
         const row = document.createElement('label');
         row.className = 'flex items-start space-x-2 text-xs text-zinc-300 cursor-pointer p-1.5 rounded hover:bg-zinc-800/50';
-        row.innerHTML = `
-          <input type="checkbox" class="mt-0.5 rounded bg-zinc-800 border-zinc-700 text-blue-500 focus:ring-0">
-          <span>${tp}</span>
-        `;
+        row.innerHTML = `<input type="checkbox" class="mt-0.5 rounded bg-zinc-800 border-zinc-700 text-blue-500 focus:ring-0"><span>${tp}</span>`;
         tpContainer.appendChild(row);
       });
 
-      // Prompt Runner
       if (seg.promptRunner) {
         document.getElementById('runner-title').innerText = seg.promptRunner.title;
         document.getElementById('runner-desc').innerText = seg.promptRunner.description;
         document.getElementById('runner-prompt-input').value = seg.promptRunner.defaultPrompt;
-        document.getElementById('runner-output').innerText = `[Ready to run '${seg.promptRunner.title}']`;
+        document.getElementById('runner-output').innerText = `[Ready to generate '${seg.promptRunner.title}']`;
       }
     }
 
@@ -505,9 +642,7 @@
     }
 
     function previousSegment() {
-      if (currentSegmentIndex > 0) {
-        loadSegment(currentSegmentIndex - 1);
-      }
+      if (currentSegmentIndex > 0) loadSegment(currentSegmentIndex - 1);
     }
 
     function fireCurrentSegmentStinger() {
@@ -548,7 +683,7 @@
           updateSegmentTimerDisplay();
         }, 1000);
 
-        showToast("🔴 Broadcast LIVE! Microphones & Timers Active");
+        showToast("🔴 Broadcast LIVE! Timers & Helm active");
       } else {
         clearInterval(broadcastInterval);
         dot.className = 'w-2 h-2 rounded-full bg-zinc-500';
@@ -590,119 +725,178 @@
     }
 
     function executeSegmentPrompt() {
-      const promptInput = document.getElementById('runner-prompt-input').value;
-      const outputEl = document.getElementById('runner-output');
       const execBtn = document.getElementById('runner-exec-btn');
-
-      execBtn.innerText = '⏳ Generating Co-Host Response...';
+      const outputEl = document.getElementById('runner-output');
+      execBtn.innerText = '⏳ Generating...';
       execBtn.disabled = true;
 
       setTimeout(() => {
-        execBtn.innerHTML = '<span>⚡</span><span>Execute Live Co-Host Prompt</span>';
+        execBtn.innerHTML = '<span>⚡</span><span>Generate Co-Host Take</span>';
         execBtn.disabled = false;
-
-        const mockResponses = [
-          `🔥 [CO-HOST HOT TAKE GENERATED]\n\n"Look, if you give an autonomous agent a corporate credit card and no hard token limits, you don't have an AI assistant—you have a slot machine with a terminal interface. The real solution isn't tighter system prompts, it's financial sandboxing at the API gateway layer!"`,
-          `🧠 [ANTI-HALLUCINATION REFRACTOR]\n\n\`\`\`json\n{\n  "role": "Strict Security Auditor",\n  "mandatory_clarification": "Verify database schema before generating migration script",\n  "schema_enforcement": "RFC-8259 JSON output only"\n}\n\`\`\``,
-          `⏱️ [FAST-FIRE VERDICT]\n\n1. AI Pins: DEAD ON ARRIVAL.\n2. Local SLMs on Mac: The future of private developer workflows.\n3. Vibe Coding: Fantastic for MVPs, lethal for banking systems.`
+        const mockTakes = [
+          `🔥 [EXECUTIVE PRODUCER HOT TAKE]\n\n"If your AI model spends 45 seconds reasoning and outputting 500 lines of code without a single unit test, that's not engineering—that's hallucination with high confidence. We need hard behavioral bounds, not polite conversational handshakes!"`,
+          `🧠 [ANTI-HALLUCINATION TRIAD]\n\n1. Role: Senior Principal Systems Auditor\n2. Interrogation: Ask 3 questions if context is < 100%\n3. Schema: Strict RFC-8259 JSON format`,
+          `🚨 [CHAOS CORNER TEARDOWN]\n\n"The vulnerability wasn't in the model weights—it was in giving a bot uncontrolled tool execution without a human-in-the-loop dollar throttle!"`
         ];
-
-        outputEl.innerText = mockResponses[currentSegmentIndex % mockResponses.length];
+        outputEl.innerText = mockTakes[currentSegmentIndex % mockTakes.length];
         window.studioAudio.playGlitchRiser();
-        showToast("⚡ Co-Host response generated!");
-      }, 600);
+        showToast("⚡ Co-Host Take Generated!");
+      }, 500);
     }
 
-    function switchInspectorTab(tab) {
-      const soundboardTab = document.getElementById('inspector-soundboard');
-      const repurposeTab = document.getElementById('inspector-repurpose');
-      const btnSound = document.getElementById('tab-soundboard');
-      const btnRepur = document.getElementById('tab-repurpose');
-
-      if (tab === 'soundboard') {
-        soundboardTab.classList.remove('hidden');
-        repurposeTab.classList.add('hidden');
-        btnSound.className = 'flex-1 py-3 text-xs font-bold text-blue-400 border-b-2 border-blue-500';
-        btnRepur.className = 'flex-1 py-3 text-xs font-bold text-zinc-400 hover:text-zinc-200';
-      } else {
-        soundboardTab.classList.add('hidden');
-        repurposeTab.classList.remove('hidden');
-        btnSound.className = 'flex-1 py-3 text-xs font-bold text-zinc-400 hover:text-zinc-200';
-        btnRepur.className = 'flex-1 py-3 text-xs font-bold text-blue-400 border-b-2 border-blue-500';
+    // ================= EP HELM SCRIPTS =================
+    function analyzeHookScore() {
+      const hook = document.getElementById('ep-hook-input').value;
+      const resultEl = document.getElementById('ep-hook-result');
+      if (!hook.trim()) {
+        showToast("Enter a cold open hook to evaluate!");
+        return;
       }
+      resultEl.classList.remove('hidden');
+      resultEl.innerHTML = `
+        <div class="flex items-center justify-between pb-2 border-b border-zinc-800">
+          <span class="text-amber-400 font-bold text-sm">HOOK RETENTION SCORE: 94 / 100</span>
+          <span class="text-emerald-400 text-[10px] font-bold">GRADE: TOP 1% VIRAL</span>
+        </div>
+        <div class="text-zinc-300 space-y-1 text-[11px]">
+          <div>• <strong>Curiosity Gap:</strong> 96% (Creates instant intrigue in first 5 seconds).</div>
+          <div>• <strong>Conflict Index:</strong> High (Directly challenges prompt engineering orthodoxies).</div>
+          <div>• <strong>Pacing:</strong> Optimal (23 words / ~8 seconds vocal read).</div>
+          <div class="text-amber-300 pt-1">💡 <strong>EP Recommendation:</strong> Follow immediately with 808 Sub Drop & Studio Lighting swell before introducing co-hosts.</div>
+        </div>
+      `;
+      window.studioAudio.playBassDrop();
+      showToast("🎯 Hook Analysis Complete!");
     }
 
-    function setRepurposeFormat(fmt) {
-      const out = document.getElementById('repurpose-output-box');
-      const bTikTok = document.getElementById('btn-fmt-tiktok');
-      const bThread = document.getElementById('btn-fmt-thread');
-      const bNews = document.getElementById('btn-fmt-newsletter');
+    function generateGuestPack() {
+      const name = document.getElementById('ep-guest-name').value || "Guest Expert";
+      const topic = document.getElementById('ep-guest-topic').value || "AI Architecture";
+      const resultEl = document.getElementById('ep-guest-result');
+      resultEl.classList.remove('hidden');
+      resultEl.innerHTML = `
+        <div class="flex items-center justify-between pb-2 border-b border-zinc-800">
+          <span class="text-purple-400 font-bold text-sm">VIP GUEST PACK: ${name.toUpperCase()}</span>
+          <button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); showToast('📋 Guest pack copied!');" class="text-[10px] text-zinc-400 hover:text-white underline">Copy</button>
+        </div>
+        <div class="text-zinc-300 space-y-2 text-[11px]">
+          <p><strong>1-Minute Host Intro:</strong> "Joining us today is ${name}, leading pioneer in ${topic}. Today we're cutting through the marketing fluff to see what actually works."</p>
+          <p><strong>3 Provocative Questions:</strong><br>
+          1. What is the biggest lie companies are telling about ${topic}?<br>
+          2. Where will this architecture break when scaled 100x?<br>
+          3. What is one tool you refuse to use in production?</p>
+          <p><strong>Pre-Written Guest Tweet:</strong> "Just recorded a high-voltage episode of @WhatThePrompt with @AndyKieckhefer diving into ${topic}. Dropping this Friday!"</p>
+        </div>
+      `;
+      window.studioAudio.playGavel();
+      showToast("🤝 VIP Guest Pack Generated!");
+    }
 
-      [bTikTok, bThread, bNews].forEach(b => b.className = 'py-1 rounded text-zinc-400 hover:text-white');
+    function exportEPSprintPlan() {
+      const text = `📋 WHAT THE PROMPT — WEEKLY EXECUTIVE PRODUCER SPRINT
+• MON: Research 3 core topics & write 15s cold open hook.
+• TUE: Live broadcast recording with active studio helm.
+• WED: Edit and master audio to -16 LUFS stereo.
+• THU: Repurpose master into 3 TikToks & Substack article.
+• FRI: Deploy to Spotify & Apple Podcasts + Launch Reel #1.
+• WEEKEND: Post viral X thread & distribution pulse.`;
+      navigator.clipboard.writeText(text);
+      showToast("📋 WDIHDI Sprint Plan copied to clipboard!");
+    }
 
-      if (fmt === 'tiktok') {
-        bTikTok.className = 'py-1 rounded bg-blue-600 text-white font-bold';
-        out.value = `📱 [TIKTOK / REEL 1: THE $200 AI SUBSCRIPTION]
-Hook (0-3s): "Stop paying $200 a month for AI reasoning models until you know this..."
-Body (4-35s): Break down how test-time compute works and why 90% of developers are burning cash.
-CTA (36-45s): "Link in bio for full episode of What the Prompt!"
+    // ================= REPURPOSE TAB SCRIPTS =================
+    function setRepurposeTab(tab) {
+      const box = document.getElementById('repurpose-main-box');
+      const bT = document.getElementById('rep-tab-tiktoks');
+      const bTh = document.getElementById('rep-tab-thread');
+      const bN = document.getElementById('rep-tab-newsletter');
+      const bY = document.getElementById('rep-tab-youtube');
 
-📱 [TIKTOK / REEL 2: THE 3-WORD PROMPT TRICK]
-Hook: "This 3-word sentence stops ChatGPT from hallucinating instantly."
-Body: Explain the 'Clarifying Interrogation' clause.
+      [bT, bTh, bN, bY].forEach(b => b.className = 'py-2 rounded text-zinc-400 hover:text-white');
 
-📱 [TIKTOK / REEL 3: AUTONOMOUS AGENT CHAOS]
-Hook: "Why this company woke up to a $12,000 server bill from an AI agent."`;
-      } else if (fmt === 'thread') {
-        bThread.className = 'py-1 rounded bg-blue-600 text-white font-bold';
-        out.value = `🧵 VIRAL X/LINKEDIN THREAD:
+      if (tab === 'tiktoks') {
+        bT.className = 'py-2 rounded bg-blue-600 text-white font-bold';
+        box.value = `📱 [TIKTOK / REEL 1: THE $200 AI REASONING SUBSCRIPTION]
+Hook (0-3s): "Stop paying $200 a month for AI models until you know this..."
+Visual Cue: Fast zoom onto terminal token burn rate.
+Body (4-35s): Break down test-time compute vs zero-shot prompting.
+CTA (36-45s): "Full episode streaming on Apple Podcasts & Spotify!"
 
-1/ We just broke down why Prompt Engineering as we knew it is officially dead on Episode 12 of 'What the Prompt'. 
+📱 [TIKTOK / REEL 2: THE ANTI-HALLUCINATION TRIAD]
+Hook: "This 3-step prompt framework stops ChatGPT hallucinations immediately."
+Visual Cue: Show 3-step code sandbox on screen.
 
-Here are the 4 takeaways every builder needs to know: 🧵👇
+📱 [TIKTOK / REEL 3: ROGUE AGENTS IN PRODUCTION]
+Hook: "Why giving an AI agent a corporate credit card is digital Russian roulette."`;
+      } else if (tab === 'thread') {
+        bTh.className = 'py-2 rounded bg-blue-600 text-white font-bold';
+        box.value = `🧵 VIRAL X/LINKEDIN BREAKDOWN THREAD:
+
+1/ Prompt Engineering as we know it is officially dead. 
+
+Here are the 4 takeaways from Episode 12 of 'What the Prompt' every software builder needs to know: 🧵👇
 
 2/ The Anti-Hallucination Triad:
-Stop writing 20-page system prompts. 
-Instead: Role Constraint + Interrogation Trigger + Strict Schema.
+Stop writing 20-page enterprise system prompts.
+Instead: Role Constraint + Clarifying Interrogation + Strict Schema.
 
-3/ Vibe Coding vs Real Engineering:
-Writing code with LLMs is fun until something breaks at 2 AM. You still need architecture understanding.
+3/ Vibe Coding vs SRE Engineering:
+Writing full-stack apps in an afternoon with AI is magical—until an unhandled exception triggers a $12k cloud loop at 2 AM.
 
 4/ Listen to the full episode on Apple Podcasts & Spotify: [LINK]`;
-      } else if (fmt === 'newsletter') {
-        bNews.className = 'py-1 rounded bg-blue-600 text-white font-bold';
-        out.value = `# What the Prompt — Episode 12 Recap
+      } else if (tab === 'newsletter') {
+        bN.className = 'py-2 rounded bg-blue-600 text-white font-bold';
+        box.value = `# What the Prompt — Episode 12 Executive Briefing
 
 **Episode:** The Death of the Search Bar & The 10,000-Token Monologue
-**Listen on:** Apple Podcasts | Spotify | YouTube
+**Available On:** Apple Podcasts • Spotify • YouTube
 
-### Key Takeaways:
-- **Search Engines vs Answer Engines:** How AI summaries are starving traditional content sites.
-- **The Anti-Hallucination Framework:** The 3 constraints that guarantee correct code generation.
-- **Chaos Corner:** The $1 car dealership prompt injection teardown.
+### Executive Summary:
+In this installment of *What the Prompt*, we break down the transition from static prompt engineering to autonomous agent loops, the true cost of test-time compute, and how to construct zero-hallucination architectures.
+
+### Key Pillars:
+1. **The Anti-Hallucination Framework** (Role + Interrogation + Schema).
+2. **The $1 Dealership Prompt Injection** (Why output guards matter).
+3. **The 30-Second Verdict:** Local SLMs on Apple Silicon vs Cloud Leviathans.
 
 *© 2026 What the Prompt. All rights reserved.*`;
+      } else if (tab === 'youtube') {
+        bY.className = 'py-2 rounded bg-blue-600 text-white font-bold';
+        box.value = `🎬 YOUTUBE TITLE & CHAPTERS:
+
+Title Options:
+1. We Tested Autonomous AI Agents With Real Credit Cards (What The Prompt)
+2. Why Prompt Engineering Is Officially Dead in 2026
+3. The $200/Month AI Subscription Trap: Explained
+
+Timestamps:
+00:00 - The Death of the Search Bar
+02:30 - What Just Shipped? ($200 Reasoning Tiers)
+08:30 - The Anti-Hallucination Masterclass
+16:30 - Chaos Corner ($1 Car Sales Prompt Injection)
+22:00 - Overrated vs. Underrated
+26:30 - Outro & Legal Signoff`;
       }
     }
 
     function copyRepurposeContent() {
-      const text = document.getElementById('repurpose-output-box').value;
+      const text = document.getElementById('repurpose-main-box').value;
       navigator.clipboard.writeText(text);
-      const btn = document.getElementById('copy-btn-text');
-      btn.innerText = 'Copied to Clipboard!';
-      setTimeout(() => btn.innerText = 'Copy to Clipboard', 2000);
-      showToast("📋 Repurposed content copied!");
+      const label = document.getElementById('repurpose-copy-label');
+      label.innerText = 'Copied to Clipboard!';
+      setTimeout(() => label.innerText = 'Copy All Assets', 2000);
+      showToast("📋 Repurposed assets copied!");
     }
 
     function copyFullRundown() {
-      let flow = `🎙️ WHAT THE PROMPT — SHOW RUNDOWN\n\n`;
+      let flow = `🎙️ WHAT THE PROMPT — FULL RUNDOWN\n\n`;
       activeEpisode.segments.forEach((s, idx) => {
         flow += `[${idx+1}] ${s.name} (${Math.floor(s.targetSeconds/60)}m)\n`;
         s.talkingPoints.forEach(tp => flow += `  • ${tp}\n`);
         flow += `\n`;
       });
       navigator.clipboard.writeText(flow);
-      showToast("📋 Show flow copied to clipboard!");
+      showToast("📋 Show flow copied!");
     }
 
     function toggleCommercialVoice() {
@@ -722,56 +916,42 @@ Writing code with LLMs is fun until something breaks at 2 AM. You still need arc
     }
 
     function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-      } else {
-        document.exitFullscreen();
-      }
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
     }
 
     function setupKeyboardShortcuts() {
       window.addEventListener('keydown', (e) => {
-        // Spacebar for next beat (if not typing in input/textarea)
         if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
           e.preventDefault();
           nextSegment();
         }
-        // Numbers 1-6 for segment jump
         if (['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6'].includes(e.code) && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
           const idx = parseInt(e.code.replace('Digit', '')) - 1;
           loadSegment(idx);
         }
-        // 'T' for commercial teaser
         if (e.key.toLowerCase() === 't' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
           window.commercialAnimator.start();
         }
-        // 'Escape' to close commercial
         if (e.key === 'Escape') {
           window.commercialAnimator.stop();
         }
       });
     }
 
-    // Audio VU Meter Simulation
     function initVuMeter() {
       const canvas = document.getElementById('vu-meter');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
-
       function draw() {
         requestAnimationFrame(draw);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const bars = 16;
+        const bars = 14;
         const barWidth = 3;
         const gap = 2;
-
         for (let i = 0; i < bars; i++) {
-          const height = isBroadcasting 
-            ? Math.random() * (canvas.height - 2) + 2 
-            : 2;
-
-          const hue = i > 12 ? '#ef4444' : (i > 8 ? '#f59e0b' : '#10b981');
+          const height = isBroadcasting ? Math.random() * (canvas.height - 2) + 2 : 2;
+          const hue = i > 10 ? '#ef4444' : (i > 7 ? '#f59e0b' : '#10b981');
           ctx.fillStyle = hue;
           ctx.fillRect(i * (barWidth + gap) + 4, canvas.height - height, barWidth, height);
         }
