@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What the Prompt — macOS Studio Helm</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            macBg: '#121316',
+            macSidebar: '#1a1c22',
+            macCard: '#21242d',
+            macBorder: 'rgba(255, 255, 255, 0.08)',
+            macAccent: '#3b82f6',
+            macRed: '#ff5f56',
+            macYellow: '#ffbd2e',
+            macGreen: '#27c93f'
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'Inter', 'sans-serif'],
+            mono: ['"SF Mono"', '"JetBrains Mono"', 'Menlo', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* macOS Glassmorphism & Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+
+    .glass-nav {
+      background: rgba(26, 28, 34, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .glass-card {
+      background: rgba(33, 36, 45, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.96); }
+    }
+    .pulse-glow { animation: pulseGlow 1.5s infinite ease-in-out; }
+
+    @keyframes kineticPunch {
+      0% { transform: scale(0.6); opacity: 0; filter: blur(10px); }
+      70% { transform: scale(1.08); opacity: 1; filter: blur(0); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes shake {
+      0% { transform: translate(1px, 1px) rotate(0deg); }
+      10% { transform: translate(-1px, -2px) rotate(-1deg); }
+      20% { transform: translate(-3px, 0px) rotate(1deg); }
+      30% { transform: translate(3px, 2px) rotate(0deg); }
+      40% { transform: translate(1px, -1px) rotate(1deg); }
+      50% { transform: translate(-1px, 2px) rotate(-1deg); }
+      60% { transform: translate(-3px, 1px) rotate(0deg); }
+      70% { transform: translate(3px, 1px) rotate(-1deg); }
+      80% { transform: translate(-1px, -1px) rotate(1deg); }
+      90% { transform: translate(1px, 2px) rotate(0deg); }
+      100% { transform: translate(1px, -2px) rotate(-1deg); }
+    }
+    .shake-anim { animation: shake 0.15s ease-in-out; }
+
+    .scanline-overlay {
+      background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%, 
+        rgba(0, 0, 0, 0.25) 50%
+      ), linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 0.03),
+        rgba(0, 255, 0, 0.01),
+        rgba(0, 0, 255, 0.03)
+      );
+      background-size: 100% 3px, 6px 100%;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="bg-macBg text-zinc-100 font-sans h-screen flex flex-col overflow-hidden select-none">
+
+  <!-- macOS Window Titlebar -->
+  <header class="h-11 glass-nav border-b border-macBorder flex items-center justify-between px-4 z-40">
+    <!-- Traffic Lights -->
+    <div class="flex items-center space-x-2 w-48">
+      <div class="w-3 h-3 rounded-full bg-macRed cursor-pointer shadow-sm flex items-center justify-center group" title="Close">
+        <span class="opacity-0 group-hover:opacity-100 text-[8px] text-black font-bold">×</span>
+      </div>
+      <div class="w-3 h-3 rounded-full bg-macYellow cursor-pointer shadow-sm flex items-center justify-center group" title="Minimize">
+        <span class="opacity-0 group-hover:opacity-100 text-[8px] text-black font-bold">-</span>
+      </div>
+      <div class="w-3 h-3 rounded-full bg-macGreen cursor-pointer shadow-sm flex items-center justify-center group" onclick="toggleFullscreen()" title="Fullscreen">
+        <span class="opacity-0 group-hover:opacity-100 text-[7px] text-black font-bold">+</span>
+      </div>
+      <span class="text-xs font-medium text-zinc-400 ml-2">What the Prompt Studio</span>
+    </div>
+
+    <!-- Center Show Status & Timers -->
+    <div class="flex items-center space-x-6">
+      <!-- On Air Pill -->
+      <div id="live-indicator" class="flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-xs font-semibold">
+        <span id="live-dot" class="w-2 h-2 rounded-full bg-zinc-500"></span>
+        <span id="live-text" class="tracking-wider">STANDBY</span>
+      </div>
+
+      <!-- Segment Timer -->
+      <div class="flex items-center space-x-1.5 font-mono text-sm">
+        <span class="text-zinc-500 text-xs uppercase">SEG:</span>
+        <span id="segment-timer-display" class="font-bold text-amber-400">02:30</span>
+      </div>
+
+      <!-- Show Elapsed Timer -->
+      <div class="flex items-center space-x-1.5 font-mono text-sm">
+        <span class="text-zinc-500 text-xs uppercase">TOTAL:</span>
+        <span id="total-timer-display" class="font-bold text-zinc-200">00:00:00</span>
+      </div>
+    </div>
+
+    <!-- Audio VU Meter & Commercial Quick Button -->
+    <div class="flex items-center space-x-4 w-64 justify-end">
+      <!-- Audio Meter Canvas -->
+      <canvas id="vu-meter" width="80" height="14" class="rounded bg-zinc-900 border border-zinc-700/50"></canvas>
+      
+      <!-- Angst Commercial Launcher Button -->
+      <button onclick="window.commercialAnimator.start()" class="flex items-center space-x-1.5 px-3 py-1 rounded-md bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white text-xs font-bold shadow-md transition transform active:scale-95">
+        <span>🎬</span>
+        <span>TEASER</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main 3-Column Studio Layout -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- 1. LEFT SIDEBAR: Show Flow & Segments Helm -->
+    <aside class="w-80 bg-macSidebar border-r border-macBorder flex flex-col justify-between">
+      
+      <!-- Show Header Info -->
+      <div class="p-4 border-b border-macBorder">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-[10px] uppercase font-bold tracking-wider text-blue-400">EPISODE #12 • LIVE</span>
+          <span class="text-[10px] text-zinc-500">30 MIN TARGET</span>
+        </div>
+        <h2 id="show-title" class="text-sm font-bold text-white leading-snug">The Death of the Search Bar & The 10,000-Token Monologue</h2>
+      </div>
+
+      <!-- Segments List -->
+      <div class="flex-1 overflow-y-auto p-3 space-y-2" id="segment-list-container">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Bottom Helm Tools -->
+      <div class="p-3 border-t border-macBorder bg-zinc-900/50 space-y-2">
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="fireCurrentSegmentStinger()" class="flex items-center justify-center space-x-1 py-1.5 px-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-amber-300 border border-amber-500/20 transition">
+            <span>⚡</span>
+            <span>Fire Stinger</span>
+          </button>
+          <button onclick="copyFullRundown()" class="flex items-center justify-center space-x-1 py-1.5 px-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 border border-zinc-700 transition">
+            <span>📋</span>
+            <span>Copy Flow</span>
+          </button>
+        </div>
+        <div class="text-[10px] text-zinc-500 text-center font-mono">
+          [SPACE] Next Beat • [1-6] Jump • [T] Teaser
+        </div>
+      </div>
+    </aside>
+
+    <!-- 2. CENTER STAGE: Teleprompter & Live Prompt Studio -->
+    <main class="flex-1 flex flex-col bg-macBg overflow-hidden">
+      
+      <!-- Segment Top Toolbar -->
+      <div class="h-12 border-b border-macBorder flex items-center justify-between px-6 bg-zinc-900/40">
+        <div class="flex items-center space-x-3">
+          <span id="active-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">HOOK</span>
+          <h1 id="active-segment-name" class="text-base font-bold text-white">Cold Open & Teaser Hook</h1>
+        </div>
+
+        <!-- Teleprompter Controls -->
+        <div class="flex items-center space-x-2 text-xs">
+          <span class="text-zinc-500">Text Size:</span>
+          <button onclick="adjustFontSize(-2)" class="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center font-bold">-</button>
+          <button onclick="adjustFontSize(2)" class="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center font-bold">+</button>
+          <div class="h-4 w-px bg-zinc-700 mx-1"></div>
+          <button onclick="togglePromptRunnerView()" id="toggle-runner-btn" class="px-2.5 py-1 rounded bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 font-medium">
+            🧠 Prompt Studio
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Stage Content Area -->
+      <div class="flex-1 flex overflow-hidden">
+
+        <!-- Teleprompter Script View -->
+        <div id="teleprompter-container" class="flex-1 overflow-y-auto p-8 space-y-6">
+          <div id="teleprompter-text" class="text-lg leading-relaxed text-zinc-200 font-sans whitespace-pre-line select-text">
+            <!-- Teleprompter content injected -->
+          </div>
+
+          <!-- Talking Points Checklist -->
+          <div class="mt-8 pt-6 border-t border-macBorder">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">On-Air Beat Checklist</h3>
+            <div id="talking-points-container" class="space-y-2">
+              <!-- Injected -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Prompt Runner Pane (Toggleable) -->
+        <div id="prompt-runner-pane" class="w-96 border-l border-macBorder bg-zinc-950/60 p-4 flex flex-col justify-between hidden">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-blue-400 uppercase tracking-wider" id="runner-title">Prompt Runner</span>
+              <span class="text-[10px] text-zinc-500">LIVE CO-PILOT</span>
+            </div>
+            <p class="text-xs text-zinc-400" id="runner-desc">Generate spicy takes and tailored prompts for this segment.</p>
+            
+            <textarea id="runner-prompt-input" rows="6" class="w-full text-xs font-mono p-3 rounded-md bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-blue-500 resize-none select-text"></textarea>
+
+            <button onclick="executeSegmentPrompt()" id="runner-exec-btn" class="w-full py-2 rounded-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md transition flex items-center justify-center space-x-1.5">
+              <span>⚡</span>
+              <span>Execute Live Co-Host Prompt</span>
+            </button>
+          </div>
+
+          <!-- Model Output Stream -->
+          <div class="flex-1 mt-4 flex flex-col">
+            <span class="text-[10px] font-bold uppercase text-zinc-500 mb-1">Co-Host Generated Response:</span>
+            <div id="runner-output" class="flex-1 p-3 rounded-md bg-zinc-900/80 border border-zinc-800 text-xs font-mono text-emerald-300 overflow-y-auto whitespace-pre-wrap select-text">
+              [Ready to generate segment response]
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Broadcast Deck Transport -->
+      <div class="h-16 border-t border-macBorder glass-nav px-6 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <button onclick="previousSegment()" class="px-3 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium transition">
+            ◀ Previous
+          </button>
+          <button onclick="nextSegment()" class="px-4 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold transition flex items-center space-x-1">
+            <span>Next Beat</span>
+            <span>▶</span>
+          </button>
+        </div>
+
+        <!-- Master Broadcast Play/Pause -->
+        <button onclick="toggleBroadcast()" id="broadcast-toggle-btn" class="px-8 py-2.5 rounded-full bg-red-600 hover:bg-red-500 text-white text-xs font-extrabold tracking-wider uppercase shadow-[0_0_20px_rgba(220,38,38,0.4)] transition transform active:scale-95 flex items-center space-x-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
+          <span id="broadcast-btn-label">START BROADCAST</span>
+        </button>
+
+        <div class="flex items-center space-x-2">
+          <button onclick="window.studioAudio.playBassDrop()" class="px-3 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-amber-400 text-xs font-mono">
+            808 SUB
+          </button>
+          <button onclick="window.studioAudio.playAirhorn()" class="px-3 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-rose-400 text-xs font-mono">
+            AIRHORN
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- 3. RIGHT INSPECTOR: Soundboard & Multi-Channel Repurposing Engine -->
+    <aside class="w-84 bg-macSidebar border-l border-macBorder flex flex-col">
+      
+      <!-- Tab Header -->
+      <div class="flex border-b border-macBorder">
+        <button onclick="switchInspectorTab('soundboard')" id="tab-soundboard" class="flex-1 py-3 text-xs font-bold text-blue-400 border-b-2 border-blue-500">
+          🔊 Soundboard
+        </button>
+        <button onclick="switchInspectorTab('repurpose')" id="tab-repurpose" class="flex-1 py-3 text-xs font-bold text-zinc-400 hover:text-zinc-200">
+          🚀 Repurpose
+        </button>
+      </div>
+
+      <!-- Tab 1: Soundboard Grid -->
+      <div id="inspector-soundboard" class="flex-1 overflow-y-auto p-4 space-y-4">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Synthesized Stingers</span>
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            <button onclick="window.studioAudio.playBassDrop()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-amber-500">
+              <div class="text-xs font-bold text-amber-400">808 Sub Drop</div>
+              <div class="text-[10px] text-zinc-500">Deep cinematic bass</div>
+            </button>
+            <button onclick="window.studioAudio.playGlitchRiser()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-cyan-500">
+              <div class="text-xs font-bold text-cyan-400">Glitch Riser</div>
+              <div class="text-[10px] text-zinc-500">Noise build & sweep</div>
+            </button>
+            <button onclick="window.studioAudio.playAngstStrobe()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-rose-500">
+              <div class="text-xs font-bold text-rose-400">Angst Strobe</div>
+              <div class="text-[10px] text-zinc-500">Aggressive saw hit</div>
+            </button>
+            <button onclick="window.studioAudio.playMicDrop()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-purple-500">
+              <div class="text-xs font-bold text-purple-400">Mic Drop</div>
+              <div class="text-[10px] text-zinc-500">Heavy impact slam</div>
+            </button>
+            <button onclick="window.studioAudio.playAirhorn()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-yellow-500">
+              <div class="text-xs font-bold text-yellow-400">Airhorn Blast</div>
+              <div class="text-[10px] text-zinc-500">Triple hype horn</div>
+            </button>
+            <button onclick="window.studioAudio.playGavel()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-emerald-500">
+              <div class="text-xs font-bold text-emerald-400">Gavel Slam</div>
+              <div class="text-[10px] text-zinc-500">Double verdict hit</div>
+            </button>
+            <button onclick="window.studioAudio.playTapeStop()" class="p-3 rounded-lg glass-card hover:bg-zinc-700/50 text-left transition group border-l-2 border-l-red-500 col-span-2">
+              <div class="text-xs font-bold text-red-400">Tape Stop / Vinyl Static</div>
+              <div class="text-[10px] text-zinc-500">Sudden halt effect</div>
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-macBorder">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Episode Copyright Lock</span>
+          <div class="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-400 mt-2 font-mono">
+            © 2026 What the Prompt.<br>All rights reserved. ID3v2 tagged.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Repurposing Engine -->
+      <div id="inspector-repurpose" class="flex-1 overflow-y-auto p-4 space-y-3 hidden">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">1-Click Content Engine</span>
+        
+        <!-- Repurpose Format Selector -->
+        <div class="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-md text-[10px] font-bold">
+          <button onclick="setRepurposeFormat('tiktok')" id="btn-fmt-tiktok" class="py-1 rounded bg-blue-600 text-white">3x TikToks</button>
+          <button onclick="setRepurposeFormat('thread')" id="btn-fmt-thread" class="py-1 rounded text-zinc-400 hover:text-white">X Thread</button>
+          <button onclick="setRepurposeFormat('newsletter')" id="btn-fmt-newsletter" class="py-1 rounded text-zinc-400 hover:text-white">Substack</button>
+        </div>
+
+        <textarea id="repurpose-output-box" rows="12" class="w-full text-xs font-mono p-3 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 resize-none select-text"></textarea>
+
+        <button onclick="copyRepurposeContent()" class="w-full py-2 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition flex items-center justify-center space-x-1">
+          <span>📋</span>
+          <span id="copy-btn-text">Copy to Clipboard</span>
+        </button>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- FULL-SCREEN KINETIC COMMERCIAL & TEASER MODAL -->
+  <div id="commercial-modal" class="fixed inset-0 z-50 bg-black hidden items-center justify-center overflow-hidden">
+    <!-- CRT Scanline & Color Glitch Overlay -->
+    <div class="absolute inset-0 scanline-overlay z-10"></div>
+    
+    <!-- Flash Overlay -->
+    <div id="commercial-flash" class="absolute inset-0 bg-white opacity-0 transition-opacity duration-100 z-20 pointer-events-none"></div>
+
+    <!-- Top Controls -->
+    <div class="absolute top-6 right-6 z-30 flex items-center space-x-3">
+      <button onclick="toggleCommercialVoice()" id="voice-toggle-btn" class="px-3 py-1.5 rounded-full bg-zinc-800/80 border border-zinc-700 text-xs font-bold text-cyan-400 backdrop-blur">
+        🗣️ Voice: ON
+      </button>
+      <button onclick="window.commercialAnimator.start()" class="px-3 py-1.5 rounded-full bg-zinc-800/80 border border-zinc-700 text-xs font-bold text-white hover:bg-zinc-700 backdrop-blur">
+        🔄 Replay
+      </button>
+      <button onclick="window.commercialAnimator.stop()" class="w-8 h-8 rounded-full bg-zinc-800/80 border border-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center font-bold backdrop-blur">
+        ✕
+      </button>
+    </div>
+
+    <!-- Center Stage Container -->
+    <div id="commercial-wrapper" class="relative z-20 text-center px-6 max-w-5xl flex flex-col items-center justify-center space-y-6">
+      <div id="commercial-subhead" class="text-xs md:text-sm font-mono tracking-[0.35em] text-zinc-400 uppercase">
+        STUDIO TRANSMISSION
+      </div>
+      <div id="commercial-headline" class="font-black text-6xl md:text-9xl tracking-tighter text-white uppercase drop-shadow-[0_0_35px_rgba(255,255,255,0.8)]">
+        THIS.
+      </div>
+    </div>
+
+    <!-- Bottom Progress Bar -->
+    <div class="absolute bottom-0 left-0 right-0 h-1.5 bg-zinc-900 z-30">
+      <div id="commercial-progress" class="h-full bg-gradient-to-r from-red-600 via-rose-500 to-cyan-400 w-0 transition-all duration-300"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full bg-zinc-900/90 border border-zinc-700 text-white text-xs font-medium shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50">
+    Notification
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="audioEngine.js"></script>
+  <script src="showData.js"></script>
+  <script src="commercialAnimator.js"></script>
+  
+  <script>
+    // State Management
+    let currentSegmentIndex = 0;
+    let isBroadcasting = false;
+    let totalSecondsElapsed = 0;
+    let segmentSecondsRemaining = 0;
+    let broadcastInterval = null;
+    let fontSize = 18;
+    let activeEpisode = window.SHOW_DATA.DEFAULT_EPISODE;
+
+    // Initialize on DOM ready
+    window.addEventListener('DOMContentLoaded', () => {
+      renderShowData();
+      loadSegment(0);
+      setupKeyboardShortcuts();
+      initVuMeter();
+    });
+
+    function renderShowData() {
+      document.getElementById('show-title').innerText = activeEpisode.title;
+      
+      const container = document.getElementById('segment-list-container');
+      container.innerHTML = '';
+
+      activeEpisode.segments.forEach((seg, index) => {
+        const item = document.createElement('div');
+        item.id = `segment-nav-${index}`;
+        item.className = `p-3 rounded-lg cursor-pointer transition flex items-center justify-between border ${index === 0 ? 'bg-zinc-800/90 border-blue-500/50' : 'glass-card hover:bg-zinc-800/50 border-transparent'}`;
+        item.onclick = () => loadSegment(index);
+
+        const mins = Math.floor(seg.targetSeconds / 60);
+        const secs = (seg.targetSeconds % 60).toString().padStart(2, '0');
+
+        item.innerHTML = `
+          <div class="flex items-center space-x-3 overflow-hidden">
+            <span class="text-base">${seg.icon}</span>
+            <div class="truncate">
+              <div class="text-xs font-bold text-zinc-200 truncate">${seg.name}</div>
+              <div class="text-[10px] text-zinc-500">${mins}:${secs} Target</div>
+            </div>
+          </div>
+          <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">${seg.badge}</span>
+        `;
+        container.appendChild(item);
+      });
+
+      setRepurposeFormat('tiktok');
+    }
+
+    function loadSegment(index) {
+      if (index < 0 || index >= activeEpisode.segments.length) return;
+      
+      // Update UI selection
+      document.querySelectorAll('#segment-list-container > div').forEach((el, i) => {
+        if (i === index) {
+          el.className = 'p-3 rounded-lg cursor-pointer transition flex items-center justify-between border bg-zinc-800/90 border-blue-500/50 shadow-md';
+        } else {
+          el.className = 'p-3 rounded-lg cursor-pointer transition flex items-center justify-between border glass-card hover:bg-zinc-800/50 border-transparent';
+        }
+      });
+
+      currentSegmentIndex = index;
+      const seg = activeEpisode.segments[index];
+      segmentSecondsRemaining = seg.targetSeconds;
+      updateSegmentTimerDisplay();
+
+      document.getElementById('active-segment-name').innerText = seg.name;
+      document.getElementById('active-badge').innerText = seg.badge;
+      document.getElementById('teleprompter-text').innerText = seg.teleprompter;
+
+      // Talking points
+      const tpContainer = document.getElementById('talking-points-container');
+      tpContainer.innerHTML = '';
+      seg.talkingPoints.forEach((tp, tpIdx) => {
+        const row = document.createElement('label');
+        row.className = 'flex items-start space-x-2 text-xs text-zinc-300 cursor-pointer p-1.5 rounded hover:bg-zinc-800/50';
+        row.innerHTML = `
+          <input type="checkbox" class="mt-0.5 rounded bg-zinc-800 border-zinc-700 text-blue-500 focus:ring-0">
+          <span>${tp}</span>
+        `;
+        tpContainer.appendChild(row);
+      });
+
+      // Prompt Runner
+      if (seg.promptRunner) {
+        document.getElementById('runner-title').innerText = seg.promptRunner.title;
+        document.getElementById('runner-desc').innerText = seg.promptRunner.description;
+        document.getElementById('runner-prompt-input').value = seg.promptRunner.defaultPrompt;
+        document.getElementById('runner-output').innerText = `[Ready to run '${seg.promptRunner.title}']`;
+      }
+    }
+
+    function nextSegment() {
+      if (currentSegmentIndex < activeEpisode.segments.length - 1) {
+        loadSegment(currentSegmentIndex + 1);
+        fireCurrentSegmentStinger();
+      } else {
+        showToast("Show rundown complete!");
+      }
+    }
+
+    function previousSegment() {
+      if (currentSegmentIndex > 0) {
+        loadSegment(currentSegmentIndex - 1);
+      }
+    }
+
+    function fireCurrentSegmentStinger() {
+      const seg = activeEpisode.segments[currentSegmentIndex];
+      if (seg && seg.stingerType) {
+        if (seg.stingerType === 'bass_drop') window.studioAudio.playBassDrop();
+        else if (seg.stingerType === 'glitch_riser') window.studioAudio.playGlitchRiser();
+        else if (seg.stingerType === 'angst_strobe') window.studioAudio.playAngstStrobe();
+        else if (seg.stingerType === 'mic_drop') window.studioAudio.playMicDrop();
+        else if (seg.stingerType === 'airhorn') window.studioAudio.playAirhorn();
+        else if (seg.stingerType === 'gavel') window.studioAudio.playGavel();
+        showToast(`⚡ Fired Stinger: ${seg.stingerType.replace('_', ' ').toUpperCase()}`);
+      }
+    }
+
+    function toggleBroadcast() {
+      isBroadcasting = !isBroadcasting;
+      const dot = document.getElementById('live-dot');
+      const text = document.getElementById('live-text');
+      const btn = document.getElementById('broadcast-btn-label');
+      const indicator = document.getElementById('live-indicator');
+
+      if (isBroadcasting) {
+        window.studioAudio.init();
+        window.studioAudio.resume();
+        window.studioAudio.playBassDrop();
+
+        dot.className = 'w-2 h-2 rounded-full bg-red-500 pulse-glow';
+        text.innerText = 'ON AIR';
+        text.className = 'tracking-wider text-red-400 font-bold';
+        btn.innerText = 'PAUSE BROADCAST';
+        indicator.className = 'flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-red-950/80 border border-red-500/50 text-xs font-semibold shadow-[0_0_12px_rgba(239,68,68,0.3)]';
+
+        broadcastInterval = setInterval(() => {
+          totalSecondsElapsed++;
+          if (segmentSecondsRemaining > 0) segmentSecondsRemaining--;
+          updateTotalTimerDisplay();
+          updateSegmentTimerDisplay();
+        }, 1000);
+
+        showToast("🔴 Broadcast LIVE! Microphones & Timers Active");
+      } else {
+        clearInterval(broadcastInterval);
+        dot.className = 'w-2 h-2 rounded-full bg-zinc-500';
+        text.innerText = 'PAUSED';
+        text.className = 'tracking-wider text-zinc-400 font-medium';
+        btn.innerText = 'RESUME BROADCAST';
+        indicator.className = 'flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-xs font-semibold';
+      }
+    }
+
+    function updateTotalTimerDisplay() {
+      const hrs = Math.floor(totalSecondsElapsed / 3600).toString().padStart(2, '0');
+      const mins = Math.floor((totalSecondsElapsed % 3600) / 60).toString().padStart(2, '0');
+      const secs = (totalSecondsElapsed % 60).toString().padStart(2, '0');
+      document.getElementById('total-timer-display').innerText = `${hrs}:${mins}:${secs}`;
+    }
+
+    function updateSegmentTimerDisplay() {
+      const mins = Math.floor(segmentSecondsRemaining / 60).toString().padStart(2, '0');
+      const secs = (segmentSecondsRemaining % 60).toString().padStart(2, '0');
+      document.getElementById('segment-timer-display').innerText = `${mins}:${secs}`;
+    }
+
+    function adjustFontSize(delta) {
+      fontSize = Math.max(14, Math.min(36, fontSize + delta));
+      document.getElementById('teleprompter-text').style.fontSize = `${fontSize}px`;
+    }
+
+    function togglePromptRunnerView() {
+      const pane = document.getElementById('prompt-runner-pane');
+      const btn = document.getElementById('toggle-runner-btn');
+      if (pane.classList.contains('hidden')) {
+        pane.classList.remove('hidden');
+        btn.className = 'px-2.5 py-1 rounded bg-blue-600 text-white font-semibold shadow';
+      } else {
+        pane.classList.add('hidden');
+        btn.className = 'px-2.5 py-1 rounded bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 font-medium';
+      }
+    }
+
+    function executeSegmentPrompt() {
+      const promptInput = document.getElementById('runner-prompt-input').value;
+      const outputEl = document.getElementById('runner-output');
+      const execBtn = document.getElementById('runner-exec-btn');
+
+      execBtn.innerText = '⏳ Generating Co-Host Response...';
+      execBtn.disabled = true;
+
+      setTimeout(() => {
+        execBtn.innerHTML = '<span>⚡</span><span>Execute Live Co-Host Prompt</span>';
+        execBtn.disabled = false;
+
+        const mockResponses = [
+          `🔥 [CO-HOST HOT TAKE GENERATED]\n\n"Look, if you give an autonomous agent a corporate credit card and no hard token limits, you don't have an AI assistant—you have a slot machine with a terminal interface. The real solution isn't tighter system prompts, it's financial sandboxing at the API gateway layer!"`,
+          `🧠 [ANTI-HALLUCINATION REFRACTOR]\n\n\`\`\`json\n{\n  "role": "Strict Security Auditor",\n  "mandatory_clarification": "Verify database schema before generating migration script",\n  "schema_enforcement": "RFC-8259 JSON output only"\n}\n\`\`\``,
+          `⏱️ [FAST-FIRE VERDICT]\n\n1. AI Pins: DEAD ON ARRIVAL.\n2. Local SLMs on Mac: The future of private developer workflows.\n3. Vibe Coding: Fantastic for MVPs, lethal for banking systems.`
+        ];
+
+        outputEl.innerText = mockResponses[currentSegmentIndex % mockResponses.length];
+        window.studioAudio.playGlitchRiser();
+        showToast("⚡ Co-Host response generated!");
+      }, 600);
+    }
+
+    function switchInspectorTab(tab) {
+      const soundboardTab = document.getElementById('inspector-soundboard');
+      const repurposeTab = document.getElementById('inspector-repurpose');
+      const btnSound = document.getElementById('tab-soundboard');
+      const btnRepur = document.getElementById('tab-repurpose');
+
+      if (tab === 'soundboard') {
+        soundboardTab.classList.remove('hidden');
+        repurposeTab.classList.add('hidden');
+        btnSound.className = 'flex-1 py-3 text-xs font-bold text-blue-400 border-b-2 border-blue-500';
+        btnRepur.className = 'flex-1 py-3 text-xs font-bold text-zinc-400 hover:text-zinc-200';
+      } else {
+        soundboardTab.classList.add('hidden');
+        repurposeTab.classList.remove('hidden');
+        btnSound.className = 'flex-1 py-3 text-xs font-bold text-zinc-400 hover:text-zinc-200';
+        btnRepur.className = 'flex-1 py-3 text-xs font-bold text-blue-400 border-b-2 border-blue-500';
+      }
+    }
+
+    function setRepurposeFormat(fmt) {
+      const out = document.getElementById('repurpose-output-box');
+      const bTikTok = document.getElementById('btn-fmt-tiktok');
+      const bThread = document.getElementById('btn-fmt-thread');
+      const bNews = document.getElementById('btn-fmt-newsletter');
+
+      [bTikTok, bThread, bNews].forEach(b => b.className = 'py-1 rounded text-zinc-400 hover:text-white');
+
+      if (fmt === 'tiktok') {
+        bTikTok.className = 'py-1 rounded bg-blue-600 text-white font-bold';
+        out.value = `📱 [TIKTOK / REEL 1: THE $200 AI SUBSCRIPTION]
+Hook (0-3s): "Stop paying $200 a month for AI reasoning models until you know this..."
+Body (4-35s): Break down how test-time compute works and why 90% of developers are burning cash.
+CTA (36-45s): "Link in bio for full episode of What the Prompt!"
+
+📱 [TIKTOK / REEL 2: THE 3-WORD PROMPT TRICK]
+Hook: "This 3-word sentence stops ChatGPT from hallucinating instantly."
+Body: Explain the 'Clarifying Interrogation' clause.
+
+📱 [TIKTOK / REEL 3: AUTONOMOUS AGENT CHAOS]
+Hook: "Why this company woke up to a $12,000 server bill from an AI agent."`;
+      } else if (fmt === 'thread') {
+        bThread.className = 'py-1 rounded bg-blue-600 text-white font-bold';
+        out.value = `🧵 VIRAL X/LINKEDIN THREAD:
+
+1/ We just broke down why Prompt Engineering as we knew it is officially dead on Episode 12 of 'What the Prompt'. 
+
+Here are the 4 takeaways every builder needs to know: 🧵👇
+
+2/ The Anti-Hallucination Triad:
+Stop writing 20-page system prompts. 
+Instead: Role Constraint + Interrogation Trigger + Strict Schema.
+
+3/ Vibe Coding vs Real Engineering:
+Writing code with LLMs is fun until something breaks at 2 AM. You still need architecture understanding.
+
+4/ Listen to the full episode on Apple Podcasts & Spotify: [LINK]`;
+      } else if (fmt === 'newsletter') {
+        bNews.className = 'py-1 rounded bg-blue-600 text-white font-bold';
+        out.value = `# What the Prompt — Episode 12 Recap
+
+**Episode:** The Death of the Search Bar & The 10,000-Token Monologue
+**Listen on:** Apple Podcasts | Spotify | YouTube
+
+### Key Takeaways:
+- **Search Engines vs Answer Engines:** How AI summaries are starving traditional content sites.
+- **The Anti-Hallucination Framework:** The 3 constraints that guarantee correct code generation.
+- **Chaos Corner:** The $1 car dealership prompt injection teardown.
+
+*© 2026 What the Prompt. All rights reserved.*`;
+      }
+    }
+
+    function copyRepurposeContent() {
+      const text = document.getElementById('repurpose-output-box').value;
+      navigator.clipboard.writeText(text);
+      const btn = document.getElementById('copy-btn-text');
+      btn.innerText = 'Copied to Clipboard!';
+      setTimeout(() => btn.innerText = 'Copy to Clipboard', 2000);
+      showToast("📋 Repurposed content copied!");
+    }
+
+    function copyFullRundown() {
+      let flow = `🎙️ WHAT THE PROMPT — SHOW RUNDOWN\n\n`;
+      activeEpisode.segments.forEach((s, idx) => {
+        flow += `[${idx+1}] ${s.name} (${Math.floor(s.targetSeconds/60)}m)\n`;
+        s.talkingPoints.forEach(tp => flow += `  • ${tp}\n`);
+        flow += `\n`;
+      });
+      navigator.clipboard.writeText(flow);
+      showToast("📋 Show flow copied to clipboard!");
+    }
+
+    function toggleCommercialVoice() {
+      const on = window.commercialAnimator.toggleVoice();
+      document.getElementById('voice-toggle-btn').innerText = on ? '🗣️ Voice: ON' : '🔇 Voice: OFF';
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+      }, 2400);
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function setupKeyboardShortcuts() {
+      window.addEventListener('keydown', (e) => {
+        // Spacebar for next beat (if not typing in input/textarea)
+        if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          nextSegment();
+        }
+        // Numbers 1-6 for segment jump
+        if (['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6'].includes(e.code) && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          const idx = parseInt(e.code.replace('Digit', '')) - 1;
+          loadSegment(idx);
+        }
+        // 'T' for commercial teaser
+        if (e.key.toLowerCase() === 't' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          window.commercialAnimator.start();
+        }
+        // 'Escape' to close commercial
+        if (e.key === 'Escape') {
+          window.commercialAnimator.stop();
+        }
+      });
+    }
+
+    // Audio VU Meter Simulation
+    function initVuMeter() {
+      const canvas = document.getElementById('vu-meter');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      function draw() {
+        requestAnimationFrame(draw);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const bars = 16;
+        const barWidth = 3;
+        const gap = 2;
+
+        for (let i = 0; i < bars; i++) {
+          const height = isBroadcasting 
+            ? Math.random() * (canvas.height - 2) + 2 
+            : 2;
+
+          const hue = i > 12 ? '#ef4444' : (i > 8 ? '#f59e0b' : '#10b981');
+          ctx.fillStyle = hue;
+          ctx.fillRect(i * (barWidth + gap) + 4, canvas.height - height, barWidth, height);
+        }
+      }
+      draw();
+    }
+  </script>
+</body>
+</html>
